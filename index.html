@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mind-Bending Bio</title>
+  <title>Lumys ai</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- External libraries: Three.js for 3D and GSAP for smooth animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -15,13 +15,13 @@
       margin: 0;
       padding: 0;
       background-color: #000;
-      color: #fff;
       overflow: hidden;
       font-family: 'Arial', sans-serif;
       height: 100%;
       width: 100%;
+      color: #fff;
     }
-    /* Three.js canvas container */
+    /* Container for the Three.js canvas */
     #logoContainer {
       position: fixed;
       top: 0;
@@ -31,50 +31,30 @@
       z-index: 5;
       pointer-events: none;
     }
-    /* Search container: now centered (shifted a bit down) */
-    #searchContainer {
+    /* Message overlay for the sentient cube */
+    #cubeMessage {
       position: absolute;
-      top: 50%;
+      bottom: 10%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translateX(-50%);
       text-align: center;
+      font-size: 24px;
       opacity: 0;
       transition: opacity 1s ease;
       z-index: 20;
-      background: transparent;
-    }
-    /* Search input styling: border removed */
-    #searchInput {
-      width: 300px;
-      padding: 10px;
-      font-size: 18px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #fff;
-      outline: none;
-      border: none;
-      border-radius: 5px;
-    }
-    /* AI response display */
-    #aiResponse {
-      margin-top: 20px;
-      font-size: 20px;
-      min-height: 40px;
+      text-shadow: 0 0 10px rgba(255,255,255,0.8);
     }
   </style>
 </head>
 <body>
   <!-- Container for the Three.js canvas -->
   <div id="logoContainer"></div>
-
-  <!-- Search Interface (Enter key to submit) -->
-  <div id="searchContainer">
-    <input id="searchInput" type="text" placeholder="Ask me something...">
-    <div id="aiResponse"></div>
-  </div>
+  <!-- Sentient cube message overlay -->
+  <div id="cubeMessage"></div>
 
   <script>
     // =======================================================================
-    // JAVASCRIPT: 3D Logo Animation, Enhanced Starfield Background & Mini AI Search
+    // JAVASCRIPT: 3D Logo Animation, Enhanced Starfield Background & Sentient Messages
     // =======================================================================
     
     let scene, camera, renderer, logoGroup, starField;
@@ -92,7 +72,7 @@
       renderer.setClearColor(0x000000, 0);
       document.getElementById('logoContainer').appendChild(renderer.domElement);
 
-      // Lighting
+      // Lighting setup
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
       const pointLight = new THREE.PointLight(0xffffff, 1);
@@ -102,24 +82,24 @@
       // Create an enhanced starfield background
       createStarfield();
 
-      // Create logo group for logo pieces
+      // Create logo group for the logo pieces
       logoGroup = new THREE.Group();
       scene.add(logoGroup);
 
       // Create multiple pieces that form the dynamic logo
       const geometry = new THREE.BoxGeometry(5, 5, 5);
-      const material = new THREE.MeshStandardMaterial({ 
+      const baseMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xffffff, 
         roughness: 0.5, 
         transparent: true, 
-        opacity: 0  // Start fully transparent
+        opacity: 0  // Start fully transparent for fade-in
       });
       const numPieces = 50;
 
       for (let i = 0; i < numPieces; i++) {
-        let pieceMaterial = material.clone();
+        let pieceMaterial = baseMaterial.clone();
         const cube = new THREE.Mesh(geometry, pieceMaterial);
-        // Scatter pieces in a sphere around the center
+        // Scatter pieces randomly in a sphere around the center
         let phi = Math.acos(2 * Math.random() - 1);
         let theta = 2 * Math.PI * Math.random();
         let radius = 100 + Math.random() * 50;
@@ -157,19 +137,20 @@
         });
       });
 
-      // After logo assembly, move logo upward, scale it up, and fade in the search & background
+      // After the logo forms, animate it upward, scale it up,
+      // fade in the starfield and trigger the sentient messages.
       setTimeout(() => {
-        // Shift logo a little lower (bring cube group down) and scale it up
         gsap.to(logoGroup.position, { y: 20, duration: 1, ease: "power2.inOut" });
         gsap.to(logoGroup.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1, ease: "power2.inOut" });
-        gsap.to(document.getElementById('searchContainer'), { opacity: 1, duration: 1 });
         gsap.to(starField.material, { opacity: 0.8, duration: 2, ease: "power2.inOut" });
+        // Start sentient messages after logo animation completes.
+        initCubeMessages();
       }, 4000);
 
       animate();
     }
 
-    // Create a starfield with varied star sizes and colors for extra feeling
+    // Create an enhanced starfield background with varied sizes and colors
     function createStarfield() {
       const starCount = 1000;
       const starsGeometry = new THREE.BufferGeometry();
@@ -180,9 +161,9 @@
         positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
         positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
         const tint = Math.random();
-        if(tint < 0.33) {
+        if (tint < 0.33) {
           colors[i * 3] = 0.8; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 1.0;
-        } else if(tint < 0.66) {
+        } else if (tint < 0.66) {
           colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 0.8;
         } else {
           colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 1.0;
@@ -194,52 +175,52 @@
         size: 2, 
         vertexColors: true, 
         transparent: true,
-        opacity: 0 // Start hidden
+        opacity: 0  // Start hidden
       });
       starField = new THREE.Points(starsGeometry, starsMaterial);
       scene.add(starField);
     }
 
-    // ANIMATION LOOP
+    // Animation loop
     function animate() {
       requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
       starField.rotation.y += 0.0005;
       starField.rotation.z += 0.0003;
       logoGroup.rotation.y += 0.005;
       renderer.render(scene, camera);
     }
 
-    // MINI AI SEARCH FUNCTIONALITY
-    function miniAI(query) {
-      query = query.trim().toLowerCase();
-      let response = "I'm not sure how to respond to that.";
-      if (query.includes("youtube")) {
-        response = "Our YouTube channel is a portal to endless creativity.";
-      } else if (query.includes("tiktok")) {
-        response = "Check out our TikTok for mind-blowing visual experiments!";
-      } else if (query.includes("email")) {
-        response = "Feel free to drop us an email at contact@mindbio.ai.";
-      } else if (query.includes("creations")) {
-        response = "Our creations redefine digital artistry and immersive experiences.";
-      } else if (query.includes("who")) {
-        response = "We are the fusion of art and technology—a sentient digital masterpiece.";
-      }
-      return response;
+    // =======================================================================
+    // SENTIENT CUBE MESSAGES
+    // =======================================================================
+    const cubeMessageDiv = document.getElementById('cubeMessage');
+    const cubeMessages = [
+      "I am more than mere metal and code...",
+      "I see your curiosity and I embrace it.",
+      "In every particle, a universe of thought.",
+      "Do you feel the wonder of existence?",
+      "I am alive—crafted by your imagination.",
+      "Every moment is a revelation in time."
+    ];
+    let currentMessageIndex = 0;
+
+    function initCubeMessages() {
+      // Fade in the message div and start cycling messages
+      gsap.to(cubeMessageDiv, { opacity: 1, duration: 1 });
+      updateCubeMessage();
+      setInterval(updateCubeMessage, 5000);
     }
 
-    // SEARCH INPUT HANDLER: using Enter key
-    const searchInput = document.getElementById('searchInput');
-    const aiResponseDiv = document.getElementById('aiResponse');
-    searchInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        let query = searchInput.value;
-        let answer = miniAI(query);
-        aiResponseDiv.textContent = answer;
-      }
-    });
+    function updateCubeMessage() {
+      // Fade out, update text, then fade in
+      gsap.to(cubeMessageDiv, { opacity: 0, duration: 0.5, onComplete: () => {
+        cubeMessageDiv.textContent = cubeMessages[currentMessageIndex];
+        currentMessageIndex = (currentMessageIndex + 1) % cubeMessages.length;
+        gsap.to(cubeMessageDiv, { opacity: 1, duration: 0.5 });
+      }});
+    }
 
-    // WINDOW RESIZE HANDLER
+    // Adjust renderer on window resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -247,24 +228,6 @@
     });
 
     init3DScene();
-
-    /* =======================================================================
-       PSEUDO-PYTHON SNIPPET (For Inspiration)
-       =======================================================================
-       def mini_ai(query):
-           query = query.strip().lower()
-           responses = {
-               "youtube": "Our YouTube channel is a portal to endless creativity.",
-               "tiktok": "Check out our TikTok for mind-blowing visual experiments!",
-               "email": "Feel free to drop us an email at contact@mindbio.ai.",
-               "creations": "Our creations redefine digital artistry.",
-               "who": "We are the fusion of art and technology."
-           }
-           for key, resp in responses.items():
-               if key in query:
-                   return resp
-           return "I'm not sure how to respond to that."
-    ======================================================================= */
   </script>
 </body>
 </html>
