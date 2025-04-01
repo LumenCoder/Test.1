@@ -21,19 +21,6 @@
       height: 100%;
       width: 100%;
     }
-    /* Loader overlay (no text now) */
-    #loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000;
-      z-index: 10;
-    }
-    #loader.hidden {
-      display: none;
-    }
     /* Three.js canvas container */
     #logoContainer {
       position: fixed;
@@ -44,12 +31,12 @@
       z-index: 5;
       pointer-events: none;
     }
-    /* Search container: centered over the scene with transparent background */
+    /* Search container: positioned at bottom center */
     #searchContainer {
       position: absolute;
-      top: 50%;
+      bottom: 10%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translateX(-50%);
       text-align: center;
       opacity: 0;
       transition: opacity 1s ease;
@@ -76,9 +63,6 @@
   </style>
 </head>
 <body>
-  <!-- Loader overlay (empty to allow the 3D scene to show) -->
-  <div id="loader"></div>
-
   <!-- Container for the Three.js canvas -->
   <div id="logoContainer"></div>
 
@@ -90,41 +74,39 @@
 
   <script>
     // =======================================================================
-    // JAVASCRIPT: 3D Logo Animation, Starfield Background & Mini AI Search
+    // JAVASCRIPT: 3D Logo Animation, Enhanced Starfield Background & Mini AI Search
     // =======================================================================
     
-    // GLOBAL VARIABLES
-    let scene, camera, renderer, logoGroup;
-    
-    // --- INITIALIZATION FUNCTION ---
+    let scene, camera, renderer, logoGroup, starField;
+    let clock = new THREE.Clock();
+
     function init3DScene() {
       // Create scene and camera
       scene = new THREE.Scene();
       camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
       camera.position.z = 150;
 
-      // Setup renderer with alpha for transparency
+      // Setup renderer with transparency
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      // Clear color with zero opacity so the particle background shows through
       renderer.setClearColor(0x000000, 0);
       document.getElementById('logoContainer').appendChild(renderer.domElement);
 
-      // Add ambient and point light for dynamic lighting
+      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
       const pointLight = new THREE.PointLight(0xffffff, 1);
       pointLight.position.set(50, 50, 50);
       scene.add(pointLight);
 
-      // Create a starfield background
+      // Create an enhanced starfield background
       createStarfield();
 
-      // Group for logo pieces
+      // Create logo group for logo pieces
       logoGroup = new THREE.Group();
       scene.add(logoGroup);
 
-      // Create multiple pieces that form the dynamic logo (using cubes as sample pieces)
+      // Create multiple pieces that form the dynamic logo
       const geometry = new THREE.BoxGeometry(5, 5, 5);
       const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
       const numPieces = 50;
@@ -143,7 +125,7 @@
         logoGroup.add(cube);
       }
 
-      // Animate the pieces to converge into a central, mesmerizing logo formation
+      // Animate logo pieces to converge at the center
       logoGroup.children.forEach(piece => {
         gsap.to(piece.position, {
           x: 0,
@@ -163,39 +145,64 @@
         });
       });
 
-      // Once the animation is complete, fade in the search interface and hide the loader
+      // After animation, move logo upward and fade in the search interface
       setTimeout(() => {
-        gsap.to(document.getElementById('searchContainer'), {opacity: 1, duration: 1});
-        document.getElementById('loader').classList.add('hidden');
+        gsap.to(logoGroup.position, { y: 50, duration: 1, ease: "power2.inOut" });
+        gsap.to(document.getElementById('searchContainer'), { opacity: 1, duration: 1 });
       }, 4000);
 
-      // Start the render loop
       animate();
     }
 
-    // --- STARFIELD CREATION FUNCTION ---
+    // Create a starfield with varied star sizes and colors for extra feeling
     function createStarfield() {
       const starCount = 1000;
       const starsGeometry = new THREE.BufferGeometry();
       const positions = new Float32Array(starCount * 3);
-      for (let i = 0; i < starCount * 3; i++) {
-        positions[i] = (Math.random() - 0.5) * 2000;
+      const colors = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount; i++) {
+        // Position stars randomly within a large cube
+        positions[i * 3] = (Math.random() - 0.5) * 2000;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
+        // Color variation: mostly white with subtle blue or yellow tints
+        const tint = Math.random();
+        if(tint < 0.33) {
+          colors[i * 3] = 0.8; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 1.0;
+        } else if(tint < 0.66) {
+          colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 0.8;
+        } else {
+          colors[i * 3] = 1.0; colors[i * 3 + 1] = 1.0; colors[i * 3 + 2] = 1.0;
+        }
       }
       starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-      const starField = new THREE.Points(starsGeometry, starsMaterial);
+      starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      const starsMaterial = new THREE.PointsMaterial({ 
+        size: 2, 
+        vertexColors: true, 
+        transparent: true,
+        opacity: 0.8 
+      });
+      starField = new THREE.Points(starsGeometry, starsMaterial);
       scene.add(starField);
     }
 
-    // --- ANIMATION LOOP ---
+    // ANIMATION LOOP
     function animate() {
       requestAnimationFrame(animate);
-      // Subtle continuous rotation for dynamism
+      const elapsed = clock.getElapsedTime();
+      
+      // Subtle rotation for the starfield to create a feeling of movement
+      starField.rotation.y += 0.0005;
+      starField.rotation.z += 0.0003;
+      
+      // Continuous rotation for the logo pieces
       logoGroup.rotation.y += 0.005;
+      
       renderer.render(scene, camera);
     }
 
-    // --- MINI AI SEARCH FUNCTIONALITY ---
+    // MINI AI SEARCH FUNCTIONALITY
     function miniAI(query) {
       query = query.trim().toLowerCase();
       let response = "I'm not sure how to respond to that.";
@@ -214,7 +221,7 @@
       return response;
     }
 
-    // --- SEARCH INPUT HANDLER ---
+    // SEARCH INPUT HANDLER: using Enter key
     const searchInput = document.getElementById('searchInput');
     const aiResponseDiv = document.getElementById('aiResponse');
     searchInput.addEventListener('keydown', (event) => {
@@ -225,14 +232,13 @@
       }
     });
 
-    // --- WINDOW RESIZE HANDLER ---
+    // WINDOW RESIZE HANDLER
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Initialize the scene
     init3DScene();
 
     /* =======================================================================
