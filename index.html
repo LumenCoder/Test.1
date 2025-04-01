@@ -108,11 +108,18 @@
 
       // Create multiple pieces that form the dynamic logo
       const geometry = new THREE.BoxGeometry(5, 5, 5);
-      const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+      const material = new THREE.MeshStandardMaterial({ 
+        color: 0xffffff, 
+        roughness: 0.5, 
+        transparent: true, 
+        opacity: 0  // Start fully transparent
+      });
       const numPieces = 50;
 
       for (let i = 0; i < numPieces; i++) {
-        const cube = new THREE.Mesh(geometry, material);
+        // Clone material to allow individual opacity tweens
+        let pieceMaterial = material.clone();
+        const cube = new THREE.Mesh(geometry, pieceMaterial);
         // Scatter pieces in a sphere around the center
         let phi = Math.acos(2 * Math.random() - 1);
         let theta = 2 * Math.PI * Math.random();
@@ -125,7 +132,7 @@
         logoGroup.add(cube);
       }
 
-      // Animate logo pieces to converge at the center
+      // Animate logo pieces to converge at the center with fade-in
       logoGroup.children.forEach(piece => {
         gsap.to(piece.position, {
           x: 0,
@@ -143,12 +150,21 @@
           ease: "power2.inOut",
           delay: Math.random() * 0.5
         });
+        // Fade in each piece
+        gsap.to(piece.material, {
+          opacity: 1,
+          duration: 2,
+          ease: "power2.inOut",
+          delay: Math.random() * 0.5
+        });
       });
 
-      // After animation, move logo upward and fade in the search interface
+      // After logo assembly, move logo upward, scale it up, and fade in the search & background
       setTimeout(() => {
         gsap.to(logoGroup.position, { y: 50, duration: 1, ease: "power2.inOut" });
+        gsap.to(logoGroup.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1, ease: "power2.inOut" });
         gsap.to(document.getElementById('searchContainer'), { opacity: 1, duration: 1 });
+        gsap.to(starField.material, { opacity: 0.8, duration: 2, ease: "power2.inOut" });
       }, 4000);
 
       animate();
@@ -181,7 +197,7 @@
         size: 2, 
         vertexColors: true, 
         transparent: true,
-        opacity: 0.8 
+        opacity: 0 // Start hidden
       });
       starField = new THREE.Points(starsGeometry, starsMaterial);
       scene.add(starField);
