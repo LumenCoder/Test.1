@@ -31,27 +31,27 @@
       z-index: 5;
       pointer-events: none;
     }
-    /* Search container: positioned at bottom center */
+    /* Search container: centered and shifted upward */
     #searchContainer {
       position: absolute;
-      bottom: 10%;
+      top: 40%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       text-align: center;
       opacity: 0;
       transition: opacity 1s ease;
       z-index: 20;
       background: transparent;
     }
-    /* Search input styling */
+    /* Search input styling: border removed */
     #searchInput {
       width: 300px;
       padding: 10px;
       font-size: 18px;
-      border: 2px solid #fff;
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
       outline: none;
+      border: none;
       border-radius: 5px;
     }
     /* AI response display */
@@ -117,7 +117,6 @@
       const numPieces = 50;
 
       for (let i = 0; i < numPieces; i++) {
-        // Clone material to allow individual opacity tweens
         let pieceMaterial = material.clone();
         const cube = new THREE.Mesh(geometry, pieceMaterial);
         // Scatter pieces in a sphere around the center
@@ -150,7 +149,6 @@
           ease: "power2.inOut",
           delay: Math.random() * 0.5
         });
-        // Fade in each piece
         gsap.to(piece.material, {
           opacity: 1,
           duration: 2,
@@ -161,7 +159,8 @@
 
       // After logo assembly, move logo upward, scale it up, and fade in the search & background
       setTimeout(() => {
-        gsap.to(logoGroup.position, { y: 50, duration: 1, ease: "power2.inOut" });
+        // Shift logo a little lower (bring cube group down) and scale it up
+        gsap.to(logoGroup.position, { y: 20, duration: 1, ease: "power2.inOut" });
         gsap.to(logoGroup.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 1, ease: "power2.inOut" });
         gsap.to(document.getElementById('searchContainer'), { opacity: 1, duration: 1 });
         gsap.to(starField.material, { opacity: 0.8, duration: 2, ease: "power2.inOut" });
@@ -177,11 +176,9 @@
       const positions = new Float32Array(starCount * 3);
       const colors = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount; i++) {
-        // Position stars randomly within a large cube
         positions[i * 3] = (Math.random() - 0.5) * 2000;
         positions[i * 3 + 1] = (Math.random() - 0.5) * 2000;
         positions[i * 3 + 2] = (Math.random() - 0.5) * 2000;
-        // Color variation: mostly white with subtle blue or yellow tints
         const tint = Math.random();
         if(tint < 0.33) {
           colors[i * 3] = 0.8; colors[i * 3 + 1] = 0.8; colors[i * 3 + 2] = 1.0;
@@ -207,14 +204,9 @@
     function animate() {
       requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
-      
-      // Subtle rotation for the starfield to create a feeling of movement
       starField.rotation.y += 0.0005;
       starField.rotation.z += 0.0003;
-      
-      // Continuous rotation for the logo pieces
       logoGroup.rotation.y += 0.005;
-      
       renderer.render(scene, camera);
     }
 
@@ -222,7 +214,6 @@
     function miniAI(query) {
       query = query.trim().toLowerCase();
       let response = "I'm not sure how to respond to that.";
-      
       if (query.includes("youtube")) {
         response = "Our YouTube channel is a portal to endless creativity.";
       } else if (query.includes("tiktok")) {
